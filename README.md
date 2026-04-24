@@ -1,6 +1,6 @@
 # Blogging Platform — Backend API
 
-A production-grade blogging platform REST API built with **Flask** and **MongoDB Atlas**, inspired by Medium. Designed with clean architecture, separation of concerns, and team development in mind.
+A production-grade blogging platform REST API built with **Flask** and **MongoDB Atlas**. Designed with clean architecture, separation of concerns, and team development in mind.
 
 ---
 
