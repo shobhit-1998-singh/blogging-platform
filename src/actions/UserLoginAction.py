@@ -1,18 +1,3 @@
-"""
-UserLoginAction.py — Handles user login.
-
-Responsibilities:
-  1. Validate input
-  2. Authenticate email + password
-  3. Generate JWT token
-  4. Return token + user data to client
-
-What it does NOT do:
-  - Verify OTP        ← handled in signup flow
-  - Hash password     ← handled in signup flow
-  - Query DB directly ← UserModel.py's job
-"""
-
 from flask import request
 from flask_jwt_extended import create_access_token
 
@@ -26,7 +11,7 @@ class UserLoginAction:
     @classmethod
     def run(cls):
         try:
-            # ── 1. Parse and clean input ───────────────────────────────────────
+            # Parse and clean input 
             data = request.get_json(force=True)
             if not data:
                 return error_response("Request body missing or invalid JSON.", 400)
@@ -35,31 +20,21 @@ class UserLoginAction:
             email    = data.get("email", "").lower()
             password = data.get("password")
 
-            # ── 2. Validate input present ──────────────────────────────────────
+            # Validate input present 
             if not email or not password:
                 return error_response("Email and password are required.", 400)
 
-            # ── 3. Authenticate against DB ─────────────────────────────────────
-            # authenticate_user() checks password hash and is_verified=True.
-            # Returns sanitized user dict (no password/otp) or None.
+            # Authenticate against DB 
             user = authenticate_user(email, password)
 
             if not user:
-                # Generic message — don't reveal whether email exists or
-                # whether it was the password that was wrong.
                 return error_response("Invalid email or password.", 401)
 
-            # ── 4. Generate JWT token ──────────────────────────────────────────
-            # identity = user_id string embedded inside the token.
-            # Every protected route calls get_jwt_identity() to get this back.
-            # str() converts MongoDB ObjectId → plain string for JSON safety.
+            # Generate JWT token 
             user_id      = str(user["_id"])
             access_token = create_access_token(identity=user_id)
 
-            # ── 5. Return token + basic user info ─────────────────────────────
-            # Frontend stores this token and sends it as:
-            #   Authorization: Bearer <access_token>
-            # on every protected request.
+            # Return token + basic user info 
             return success_response(
                 "Login successful.",
                 data={
@@ -68,8 +43,6 @@ class UserLoginAction:
                         "id":                user_id,
                         "email":             user["email"],
                         "profile_completed": user.get("profile_completed", False),
-                        # profile_completed tells frontend whether to show
-                        # profile setup screen or go straight to home feed
                     }
                 },
                 status_code=200

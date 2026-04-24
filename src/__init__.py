@@ -9,7 +9,6 @@ app = Flask(__name__)
 
 
 # Load ALL config values from Config class in one line.
-# This reads SECRET_KEY, MONGO_URI, JWT_SECRET_KEY, MAIL_* etc. all at once.
 app.config.from_object(Config)
 
 
@@ -19,9 +18,7 @@ mail = Mail(app)
 jwt   = JWTManager(app)
 
 
-# ── JWT error handlers ────────────────────────────────────────────────────────
-# By default, flask-jwt-extended returns plain text errors.
-# These handlers override that to return clean JSON — consistent with your API.
+# ── JWT error handlers 
 
 @jwt.unauthorized_loader
 def missing_token_callback(error):

@@ -12,14 +12,14 @@ def remove_white_space(data):
     :return: Cleaned dictionary with trimmed string values.
     """
     if not isinstance(data, dict):
-        return data  # Return as is if not a dictionary
+        return data  
 
     cleaned_data = {}
     for key, value in data.items():
         if isinstance(value, str):
-            cleaned_data[key] = value.strip()  # Trim whitespace for strings
+            cleaned_data[key] = value.strip()  
         else:
-            cleaned_data[key] = value  # Keep other data types unchanged
+            cleaned_data[key] = value  
 
     return cleaned_data
 
@@ -28,19 +28,12 @@ def get_current_user():
     """
     Returns the full user document for the currently logged-in user.
     """
-    user_id = get_jwt_identity()   # extracts user_id string from JWT token
-    return get_user_by_id(user_id) # converts to ObjectId, queries MongoDB
+    user_id = get_jwt_identity()   
+    return get_user_by_id(user_id)
 
 def make_aware(dt):
     """
     Ensures a datetime from MongoDB is timezone-aware (UTC).
-
-    PyMongo strips tzinfo on read — this reattaches it safely.
-    Use this every time you compare a MongoDB datetime with
-    datetime.now(timezone.utc).
-
-    Usage:
-      created_at = make_aware(document.get("created_at"))
     """
     if dt is not None and dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)

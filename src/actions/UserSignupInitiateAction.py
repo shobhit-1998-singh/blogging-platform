@@ -1,22 +1,7 @@
-"""
-UserSignupInitiateAction.py — Step 1 of signup.
-
-Accepts email only.
-Validates format, checks duplicates, sends OTP.
-Does NOT touch the users collection.
-Does NOT ask for password yet.
-"""
-
 import re
 import secrets
-
 from flask import request
-
-from src.models.PendingSignupModel import (
-    create_pending_signup,
-    get_pending_by_email,
-    update_pending_otp,
-)
+from src.models.PendingSignupModel import create_pending_signup, get_pending_by_email, update_pending_otp
 from src.models.UserModel import get_user_by_email
 from src.utils.helpers import remove_white_space
 from src.utils.mail import send_otp_email
@@ -27,7 +12,6 @@ class UserSignupInitiateAction:
 
     EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
-    # ↑ Everything below must be indented ONE level inside the class
 
     @classmethod
     def _generate_otp(cls):
@@ -38,7 +22,7 @@ class UserSignupInitiateAction:
     def run(cls, obj):
         """Main handler — orchestrates the full Step 1 flow."""
         try:
-            # ── 1. Parse input ─────────────────────────────────────────────────
+            # Parse input 
             data = request.get_json(force=True)
             if not data:
                 return error_response("Request body missing or invalid JSON.", 400)
@@ -46,7 +30,7 @@ class UserSignupInitiateAction:
             data  = remove_white_space(data)
             email = data.get("email", "").lower()
 
-            # ── 2. Validate email format ───────────────────────────────────────
+            # Validate email format 
             if not email:
                 return error_response("Email is required.", 400)
 
@@ -56,7 +40,7 @@ class UserSignupInitiateAction:
                     400
                 )
 
-            # ── 3. Check not already a registered verified user ────────────────
+            # Check not already a registered verified user 
             existing_user = get_user_by_email(email)
             if existing_user:
                 return error_response(
@@ -64,17 +48,17 @@ class UserSignupInitiateAction:
                     409
                 )
 
-            # ── 4. Generate OTP ────────────────────────────────────────────────
+            # Generate OTP 
             otp = cls._generate_otp()
 
-            # ── 5. Create or refresh pending signup record ─────────────────────
+            #  Create or refresh pending signup record 
             existing_pending = get_pending_by_email(email)
             if existing_pending:
                 update_pending_otp(email, otp)
             else:
                 create_pending_signup(email, otp)
 
-            # ── 6. Send OTP email ──────────────────────────────────────────────
+            # Send OTP email 
             email_sent = send_otp_email(email, otp)
             if not email_sent:
                 return error_response(

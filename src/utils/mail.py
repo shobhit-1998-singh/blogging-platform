@@ -1,31 +1,5 @@
-"""
-utils/mail.py — Email sending utilities.
-
-Rule: All email-related functions live here.
-      New email types (welcome, password reset, etc.)
-      get added as new functions in this file.
-
-Why separate from actions?
-  - Actions decide WHEN to send email
-  - This file decides HOW to send email
-  - If you switch from Gmail to SendGrid tomorrow,
-    you only change this file — nothing else.
-
-Error handling strategy:
-  - SMTPAuthenticationError  → credentials wrong (.env issue)
-  - SMTPConnectError         → can't reach Gmail server (network issue)
-  - SMTPRecipientsRefused    → recipient email is invalid/rejected
-  - ConnectionRefusedError   → wrong port or server config
-  - Exception                → unexpected fallback catch
-
-  We catch specific exceptions first (most specific → least specific)
-  so we know EXACTLY what went wrong instead of a generic "something failed".
-"""
-
 import smtplib
-
 from flask_mail import Message
-
 from src import mail
 
 
@@ -46,9 +20,6 @@ def _send_email(subject, recipient, body):
       All public functions share the same send + error handling logic.
       Keeping it here avoids repeating try/except in every function.
 
-    Returns:
-      (True, None)           on success
-      (False, error_message) on failure
     """
     try:
         msg = Message(subject=subject, recipients=[recipient], body=body)
@@ -119,21 +90,6 @@ def _send_email(subject, recipient, body):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def send_otp_email(recipient, otp):
-    """
-    Sends an OTP verification email.
-
-    Called during:
-      - Signup        → verify new account
-      - Resend OTP    → user requests a new code
-
-    Args:
-      recipient (str): User's email address
-      otp       (str): 6-digit OTP code
-
-    Returns:
-      True  → email sent successfully
-      False → email failed (action layer handles gracefully)
-    """
     subject = "Your OTP Code — Blogging Platform"
 
     body = (
@@ -157,16 +113,6 @@ def send_otp_email(recipient, otp):
 
 
 def send_welcome_email(recipient, name):
-    """
-    Sends a welcome email after the user completes profile setup.
-
-    Called during:
-      - UserProfileAction → after profile is saved successfully
-
-    Args:
-      recipient (str): User's email address
-      name      (str): User's display name
-    """
     subject = "Welcome to the Blogging Platform!"
 
     body = (
@@ -187,13 +133,6 @@ def send_welcome_email(recipient, name):
 #Forgot Password/Reset Password OTP mail--------------------------------------------------------------------
 
 def send_reset_otp_email(recipient, otp):
-    """
-    Sends a password reset OTP email.
-
-    Called during Step 1 of forgot password flow.
-    Separate from send_otp_email so subject and body
-    are clearly different — user knows it's a reset, not signup.
-    """
     subject = "Password Reset OTP — Blogging Platform"
 
     body = (

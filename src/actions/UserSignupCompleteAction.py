@@ -1,18 +1,6 @@
-"""
-UserSignupCompleteAction.py — Step 3 of signup.
-
-Accepts email + password.
-Checks email went through OTP verification (is_otp_verified=True).
-Validates password strength.
-Creates the actual user in the users collection.
-Cleans up pending_signups record.
-"""
-
 import re
-
 from flask import request
 from werkzeug.security import generate_password_hash
-
 from src.models.PendingSignupModel import get_pending_by_email, delete_pending_signup
 from src.models.UserModel import create_user, get_user_by_email
 from src.utils.helpers import remove_white_space
@@ -26,10 +14,6 @@ class UserSignupCompleteAction:
 
     @classmethod
     def _validate_password(cls, password):
-        """
-        Validates password strength.
-        Returns (True, None) or (False, error_message).
-        """
         if not password:
             return False, "Password is required."
 
@@ -58,7 +42,7 @@ class UserSignupCompleteAction:
     @classmethod
     def run(cls, obj):
         try:
-            # ── 1. Parse input ─────────────────────────────────────────────────
+            # Parse input 
             data = request.get_json(force=True)
             if not data:
                 return error_response("Request body missing or invalid JSON.", 400)
@@ -70,12 +54,12 @@ class UserSignupCompleteAction:
             if not email:
                 return error_response("Email is required.", 400)
 
-            # ── 2. Validate password ───────────────────────────────────────────
+            # Validate password 
             is_valid, password_error = cls._validate_password(password)
             if not is_valid:
                 return error_response(password_error, 400)
 
-            # ── 3. Check pending record exists and OTP was verified ────────────
+            # Check pending record exists and OTP was verified
             pending = get_pending_by_email(email)
 
             if not pending:
@@ -90,10 +74,10 @@ class UserSignupCompleteAction:
                 return error_response(
                     "Email not verified. "
                     "Please complete OTP verification before setting a password.",
-                    403   # 403 Forbidden — they're not allowed to skip Step 2
+                    403
                 )
 
-            # ── 4. Check user doesn't already exist ────────────────────────────
+            #Check user doesn't already exist 
             # Edge case: user completed signup elsewhere between steps.
             if get_user_by_email(email):
                 delete_pending_signup(email)   # clean up stale pending record
@@ -102,17 +86,16 @@ class UserSignupCompleteAction:
                     409
                 )
 
-            # ── 5. Hash password and create user ──────────────────────────────
+            # Hash password and create user 
             password_hash = generate_password_hash(password)
 
             # create_user sets is_verified=True directly since email is already
-            # verified via OTP in Step 2 — no need for a second verification.
             create_user(email, password_hash, otp=None, is_verified=True)
 
-            # ── 6. Clean up pending record ─────────────────────────────────────
+            # Clean up pending record 
             delete_pending_signup(email)
 
-            # ── 7. Send welcome email ──────────────────────────────────────────
+            # Send welcome email 
             send_welcome_email(email, name=email.split("@")[0])
             # name fallback: use part before @ until profile is filled
 

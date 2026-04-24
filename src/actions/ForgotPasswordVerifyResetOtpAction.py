@@ -1,15 +1,5 @@
-"""
-VerifyResetOtpAction.py — Step 2 of password reset flow.
-
-Accepts email + OTP.
-Verifies OTP, marks reset as verified.
-Unlocks Step 3 — new password can now be submitted.
-"""
-
 from datetime import datetime, timezone
-
 from flask import request
-
 from src.models.UserModel import get_user_by_email, verify_reset_otp
 from src.utils.helpers import remove_white_space, make_aware
 from src.utils.response import success_response, error_response
@@ -39,7 +29,7 @@ class ForgotPasswordVerifyResetOtpAction :
     @classmethod
     def run(cls, obj):
         try:
-            # ── 1. Parse input ─────────────────────────────────────────────────
+            # Parse input 
             data = request.get_json(force=True)
             if not data:
                 return error_response("Request body missing or invalid JSON.", 400)
@@ -48,7 +38,7 @@ class ForgotPasswordVerifyResetOtpAction :
             email = data.get("email", "").lower()
             otp   = str(data.get("otp", "")).strip()
 
-            # ── 2. Validate format ─────────────────────────────────────────────
+            # Validate format 
             if not email:
                 return error_response("Email is required.", 400)
 
@@ -57,7 +47,7 @@ class ForgotPasswordVerifyResetOtpAction :
                     f"OTP must be a {cls.OTP_LENGTH}-digit number.", 400
                 )
 
-            # ── 3. Fetch user ──────────────────────────────────────────────────
+            # Fetch user
             user = get_user_by_email(email)
             if not user or not user.get("reset_otp"):
                 # Generic message — don't reveal account existence
@@ -65,14 +55,14 @@ class ForgotPasswordVerifyResetOtpAction :
                     "Invalid email or OTP. Please request a new reset OTP.", 400
                 )
 
-            # ── 4. Check OTP match ─────────────────────────────────────────────
+            # Check OTP match 
             stored_otp = str(user.get("reset_otp", ""))
             if stored_otp != otp:
                 return error_response(
                     "Invalid OTP. Please check the code and try again.", 400
                 )
 
-            # ── 5. Check OTP expiry ────────────────────────────────────────────
+            # Check OTP expiry
             if cls._is_otp_expired(user.get("reset_otp_created_at")):
                 return error_response(
                     f"OTP has expired. OTPs are valid for "
@@ -81,7 +71,7 @@ class ForgotPasswordVerifyResetOtpAction :
                     410
                 )
 
-            # ── 6. Mark OTP as verified ────────────────────────────────────────
+            # Mark OTP as verified
             verify_reset_otp(email)
 
             return success_response(

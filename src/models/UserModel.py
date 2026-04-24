@@ -163,7 +163,7 @@ def authenticate_user(email, password):
     return None
 
 
-# SANITIZE HELPER------------------------------------------------------------------------------------
+# SANITIZE HELPER
 
 #Removes sensitive fields from a user document before returning it
 def sanitize_user(user):
@@ -181,7 +181,7 @@ def sanitize_user(user):
     return user
 
 
-# RESET PASSWORD or Forgot Password---------------------------------------------------------------
+# RESET PASSWORD or Forgot Password
 
 #otp for reset/forgot password
 def set_reset_otp(email, otp):

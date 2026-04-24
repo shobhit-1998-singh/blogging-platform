@@ -1,17 +1,6 @@
-"""
-ResetPasswordAction.py — Step 3 of password reset flow.
-
-Accepts email + new password.
-Checks reset OTP was verified in Step 2.
-Validates password strength.
-Saves new hashed password, clears all reset fields.
-"""
-
 import re
-
 from flask import request
 from werkzeug.security import generate_password_hash
-
 from src.models.UserModel import get_user_by_email, reset_user_password
 from src.utils.helpers import remove_white_space
 from src.utils.response import success_response, error_response
@@ -23,10 +12,6 @@ class ResetPasswordAction:
 
     @classmethod
     def _validate_password(cls, password):
-        """
-        Validates new password strength.
-        Returns (True, None) or (False, error_message).
-        """
         if not password:
             return False, "Password is required."
 
@@ -55,7 +40,7 @@ class ResetPasswordAction:
     @classmethod
     def run(cls, obj):
         try:
-            # ── 1. Parse input ─────────────────────────────────────────────────
+            # Parse input 
             data = request.get_json(force=True)
             if not data:
                 return error_response("Request body missing or invalid JSON.", 400)
@@ -67,20 +52,19 @@ class ResetPasswordAction:
             if not email:
                 return error_response("Email is required.", 400)
 
-            # ── 2. Validate password strength ──────────────────────────────────
+            # Validate password strength 
             is_valid, password_error = cls._validate_password(new_password)
             if not is_valid:
                 return error_response(password_error, 400)
 
-            # ── 3. Fetch user ──────────────────────────────────────────────────
+            # Fetch user 
             user = get_user_by_email(email)
             if not user:
                 return error_response(
                     "Invalid request. Please restart the reset flow.", 400
                 )
 
-            # ── 4. Check reset OTP was verified ───────────────────────────────
-            # Prevents skipping Step 2 and jumping straight to password reset.
+            # Check reset OTP was verified 
             if not user.get("reset_otp_verified"):
                 return error_response(
                     "OTP not verified. "
@@ -88,7 +72,7 @@ class ResetPasswordAction:
                     403   # 403 Forbidden — not allowed to skip Step 2
                 )
 
-            # ── 5. Hash and save new password ──────────────────────────────────
+            # Hash and save new password 
             new_password_hash = generate_password_hash(new_password)
             reset_user_password(email, new_password_hash)
             # reset_user_password also clears all reset_otp fields from DB
