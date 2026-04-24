@@ -147,19 +147,19 @@ CLOUDINARY_API_SECRET=your_api_secret
 **Step 1 — Submit Email**
 ```
 POST /user/signup
-Body: { "email": "john@gmail.com" }
+Body: { "email": "ram@gmail.com" }
 ```
 
 **Step 2 — Verify OTP**
 ```
 POST /user/verify-otp
-Body: { "email": "john@gmail.com", "otp": "847291" }
+Body: { "email": "ram@gmail.com", "otp": "847291" }
 ```
 
 **Step 3 — Set Password**
 ```
 POST /user/complete-signup
-Body: { "email": "john@gmail.com", "password": "Secure@123" }
+Body: { "email": "ram@gmail.com", "password": "Secure@123" }
 ```
 
 Password requirements: 8+ chars, uppercase, lowercase, number, special character.
@@ -169,7 +169,7 @@ Password requirements: 8+ chars, uppercase, lowercase, number, special character
 #### Login
 ```
 POST /api/user/login
-Body: { "email": "john@gmail.com", "password": "Secure@123" }
+Body: { "email": "ram@gmail.com", "password": "Secure@123" }
 
 Response:
 {
@@ -179,7 +179,7 @@ Response:
     "token": "eyJhbGci...",
     "user": {
       "id": "64abc123",
-      "email": "john@gmail.com",
+      "email": "ram@gmail.com",
       "profile_completed": false
     }
   }
@@ -195,19 +195,19 @@ Response:
 **Step 1 — Request Reset OTP**
 ```
 POST /user/forgot-password
-Body: { "email": "john@gmail.com" }
+Body: { "email": "ram@gmail.com" }
 ```
 
 **Step 2 — Verify Reset OTP**
 ```
 POST /user/verify-reset-otp
-Body: { "email": "john@gmail.com", "otp": "391047" }
+Body: { "email": "ram@gmail.com", "otp": "391047" }
 ```
 
 **Step 3 — Set New Password**
 ```
 POST /user/reset-password
-Body: { "email": "john@gmail.com", "password": "NewSecure@456" }
+Body: { "email": "ram@gmail.com", "password": "NewSecure@456" }
 ```
 
 ---
