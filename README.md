@@ -1,4 +1,4 @@
-# Blogging Platform — Backend API
+# Blogging Platform
 
 A production-grade blogging platform REST API built with **Flask** and **MongoDB Atlas**. Designed with clean architecture, separation of concerns, and team development in mind.
 
