@@ -4,22 +4,18 @@ from werkzeug.security import check_password_hash
 from src import mongo
 
 
-# ── Collection reference ───────────────────────────────────────────────────────
-# Single place to change if collection is ever renamed.
+# Collection reference
 users_collection = mongo.db.users
 
 
-# ── UTC helper ─────────────────────────────────────────────────────────────────
+# UTC helper
 def utcnow():
     """
     Returns current UTC time as a timezone-aware datetime object.
     """
     return datetime.now(timezone.utc)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 # CREATE
-# ─────────────────────────────────────────────────────────────────────────────
 
 def create_user(email, password_hash, otp=None, is_verified=False):
     """
@@ -32,15 +28,13 @@ def create_user(email, password_hash, otp=None, is_verified=False):
         "otp_created_at": utcnow(),   # used to enforce OTP expiry
         "is_verified": is_verified,
         "profile_completed": False,
+        "reset_otp_requests": [],
         "created_at": utcnow(),
         "updated_at": utcnow(),
     }
     return users_collection.insert_one(user)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 # READ
-# ─────────────────────────────────────────────────────────────────────────────
 
 def get_user_by_email(email):
     """
@@ -58,10 +52,8 @@ def get_user_by_id(user_id):
     except Exception:
         return None
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 # UPDATE — OTP
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 def update_user_otp(email, otp):
     """
@@ -76,10 +68,8 @@ def update_user_otp(email, otp):
         }}
     )
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 # UPDATE — VERIFICATION
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 def verify_user(email):
     """
@@ -102,15 +92,12 @@ def verify_user(email):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # UPDATE — PROFILE
-# ─────────────────────────────────────────────────────────────────────────────
 
 def update_user_profile(user_id, profile_data):
     """
     Updates a user's profile fields after login.
-    profile_completed → True once this is saved.
-    updated_at → refreshed on every profile update.
     """
     profile_fields = {
         "name": profile_data.get("name"),
@@ -121,6 +108,7 @@ def update_user_profile(user_id, profile_data):
         "expertise": profile_data.get("expertise"),
         "college": profile_data.get("college"),
         "bio": profile_data.get("bio"),
+        "interests": profile_data.get("interests"),
         "profile_completed": True,      
         "updated_at": utcnow(),
     }
@@ -138,10 +126,7 @@ def update_user_profile(user_id, profile_data):
         {"$set": profile_fields}
     )
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 # AUTH
-# ─────────────────────────────────────────────────────────────────────────────
 
 def authenticate_user(email, password):
     """
@@ -184,13 +169,14 @@ def sanitize_user(user):
 # RESET PASSWORD or Forgot Password
 
 #otp for reset/forgot password
-def set_reset_otp(email, otp):
+def set_reset_otp(email, otp, clean_requests):
     return users_collection.update_one(
         {"email": email},
         {"$set": {
             "reset_otp": otp,
             "reset_otp_created_at": utcnow(),
             "reset_otp_verified": False,
+            "reset_otp_requests": clean_requests,
             "updated_at": utcnow(),
         }}
     )
@@ -222,4 +208,29 @@ def reset_user_password(email, new_password_hash):
                 "reset_otp_verified": "",
             }
         }
+    )
+
+def update_social_links(user_id, social_links):
+    """
+    Updates user's social profile links.
+    """
+    update_fields = {}
+    for platform, url in social_links.items():
+        update_fields[f"social_links.{platform}"] = url
+
+    update_fields["updated_at"] = utcnow()
+
+    return users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": update_fields}
+    )
+
+# User Profile Pic Upload
+def update_user_avatar(user_id, avatar_public_id):
+    return users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {
+            "avatar_public_id": avatar_public_id,
+            "updated_at": utcnow(),
+        }}
     )

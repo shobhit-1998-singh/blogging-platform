@@ -5,7 +5,8 @@ from src.actions.UserSignupCompleteAction import UserSignupCompleteAction
 from src.actions.ForgotPasswordAction import ForgotPasswordAction
 from src.actions.ForgotPasswordVerifyResetOtpAction import ForgotPasswordVerifyResetOtpAction
 from src.actions.ResetPasswordAction import ResetPasswordAction
-
+from src.actions.user.UserProfileAction import UserProfileAction
+from src.actions.user.UserProfileImageAction import UserProfileImageAction
 
 class UserRoutes(FlaskView):
     trailing_slash = False
@@ -36,3 +37,21 @@ class UserRoutes(FlaskView):
     @route("/reset-password", methods=["POST"])
     def reset_password(self):
         return ResetPasswordAction.run(self)
+
+    # ── Profile ────────────────────────────────────────────────────────────────
+
+    @route("/profile", methods=["POST"])
+    def save_profile(self):
+        return UserProfileAction.save_profile()
+
+    @route("/profile", methods=["GET"])
+    def get_profile(self):
+        return UserProfileAction.get_profile()
+
+    @route("/<user_id>/profile", methods=["GET"])
+    def get_public_profile(self, user_id):
+        return UserProfileAction.get_public_profile(user_id)
+
+    @route("/profile/avatar", methods=["POST"])
+    def upload_avatar(self):
+        return UserProfileImageAction.upload_avatar()

@@ -5,13 +5,16 @@ from src.models.PendingSignupModel import create_pending_signup, get_pending_by_
 from src.models.UserModel import get_user_by_email
 from src.utils.helpers import remove_white_space
 from src.utils.mail import send_otp_email
+from src.utils.otp_rate_limiter import check_rate_limit
 from src.utils.response import success_response, error_response
+from flask import jsonify
 
 
 class UserSignupInitiateAction:
 
-    EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-
+    EMAIL_REGEX = re.compile(
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    )
 
     @classmethod
     def _generate_otp(cls):
@@ -20,7 +23,6 @@ class UserSignupInitiateAction:
 
     @classmethod
     def run(cls, obj):
-        """Main handler — orchestrates the full Step 1 flow."""
         try:
             # Parse input 
             data = request.get_json(force=True)
@@ -30,7 +32,7 @@ class UserSignupInitiateAction:
             data  = remove_white_space(data)
             email = data.get("email", "").lower()
 
-            # Validate email format 
+            # Validate email 
             if not email:
                 return error_response("Email is required.", 400)
 
@@ -40,7 +42,7 @@ class UserSignupInitiateAction:
                     400
                 )
 
-            # Check not already a registered verified user 
+            # Check not already registered 
             existing_user = get_user_by_email(email)
             if existing_user:
                 return error_response(
@@ -48,13 +50,32 @@ class UserSignupInitiateAction:
                     409
                 )
 
+            # Check rate limit 
+            existing_pending = get_pending_by_email(email)
+            otp_requests     = []
+
+            if existing_pending:
+                otp_requests = existing_pending.get("otp_requests", [])
+
+            rate_limit_result = check_rate_limit(otp_requests)
+
+            if not rate_limit_result["allowed"]:
+                return jsonify({
+                    "status":       "failed",
+                    "message":      rate_limit_result["message"],
+                    "wait_seconds": rate_limit_result["wait_seconds"],
+                }), 429
+
             # Generate OTP 
             otp = cls._generate_otp()
 
-            #  Create or refresh pending signup record 
-            existing_pending = get_pending_by_email(email)
+            # Create or update pending record 
             if existing_pending:
-                update_pending_otp(email, otp)
+                update_pending_otp(
+                    email,
+                    otp,
+                    rate_limit_result["clean_requests"]
+                )
             else:
                 create_pending_signup(email, otp)
 
