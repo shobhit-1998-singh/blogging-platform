@@ -234,3 +234,11 @@ def update_user_avatar(user_id, avatar_public_id):
             "updated_at": utcnow(),
         }}
     )
+
+# ── Indexes Email for login and forgot email 
+# Fast email lookups + prevent duplicate accounts at DB level.
+users_collection.create_index(
+    "email",
+    unique=True,
+    name="users_email_unique"
+)
